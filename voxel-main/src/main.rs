@@ -58,41 +58,6 @@ fn sync_actor_node(window: &mut Window, world_map: &WorldMap, actor: &mut Actor)
     node.set_color(r, g, b);
 }
 
-fn sync_entity(window: &mut Window, entity: &mut WorldEntity) {
-    //
-    // Early return if the graphics are already up to date
-    //
-    if let Some(graphics) = entity.graphics.as_mut() {
-        if graphics.sync_id == entity.state.sync_id() {
-            return;
-        }
-    } else {
-        let node = window.add_cube(
-            entity.state.width as f32,
-            entity.state.height as f32,
-            entity.state.length as f32,
-        );
-        entity.graphics = Some(Graphics {
-            sync_id: entity.state.sync_id(),
-            node,
-        });
-    }
-
-    let graphics = entity.graphics.as_mut().unwrap();
-
-    let t = Translation3::new(
-        entity.state.x as f32 + (entity.state.width as f32) / 2.0 - 0.5,
-        entity.state.z as f32 + (entity.state.height as f32) / 2.0 - 0.5,
-        entity.state.y as f32 + (entity.state.length as f32) / 2.0 - 0.5,
-    );
-    graphics.node.set_local_translation(t);
-
-    let (r, g, b) = entity.state.color();
-    graphics.node.set_color(r, g, b);
-
-    // graphics.sync_id = entity.state.sync_id();
-}
-
 struct Text {
     text: String,
     expiration: std::time::Instant,
