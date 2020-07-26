@@ -15,4 +15,4 @@ archive:
 
 publish:
 	bash $(MONOREPO_ROOT)/deploy/scripts/push-from-monorepo.sh \
-		monorepo ridleywinters git@github.com:ridleywinters/raiment
+		monorepo ridleywinters git@github.com:ridleywinters/raiment main
