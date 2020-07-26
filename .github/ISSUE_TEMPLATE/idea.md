@@ -1,7 +1,7 @@
 ---
 name: Idea
 about: Informally suggest an idea for the project
-title: ''
+title: '[IDEA] '
 labels: idea
 assignees: ''
 
