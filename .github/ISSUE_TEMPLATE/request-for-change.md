@@ -1,7 +1,7 @@
 ---
 name: Request for Change (RFC)
 about: Open a formal request for change
-title: ''
+title: 'RFC: '
 labels: rfc
 assignees: ''
 
