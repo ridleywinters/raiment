@@ -1,6 +1,6 @@
 ---
 name: Request for Change (RFC)
-about: Suggest an idea for this project
+about: Open a formal request for change
 title: ''
 labels: rfc
 assignees: ''
