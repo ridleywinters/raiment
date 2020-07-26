@@ -1,0 +1,8 @@
+{
+  "devDependencies": {
+    "glob": "^7.1.6",
+    "lodash": "^4.17.15",
+    "nodemon": "^2.0.4",
+    "shelljs": "^0.8.4"
+  }
+}
