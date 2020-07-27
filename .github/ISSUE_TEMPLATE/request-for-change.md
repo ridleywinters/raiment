@@ -15,9 +15,35 @@ _One paragraph synopsis of the request for change_
 
 _What is the use case? Who does it benefit? When will they encounter this and how will it benefit them? What is the outcome if this problem is solved?_
 
+#### Definition of Done / Requirements
+
+* _Bullet list of "must be true" statement for this RFC to be considered complete_
+* _Next bullet_
+* _Next bullet_
+
+#### Definition of Success
+
+* _Bullet list of external outcomes that indicated the RFC is not just done, but has added value_
+* _Next bullet_
+* _Next bullet_
+
 ## Context
 
+#### Background
+
 _Note any key discussions, decisions, or prior issues that help frames this request for change. Also note any evolution of this RFC itself in this section._
+
+#### Trade-offs and Alternatives
+
+_What trade-offs does pursuing this involve? What are other options that have been considered but are not being pursued?_
+
+#### Risks & Mitigations
+
+_What could go wrong _along with_ what should be proactively done to reduce the likelihood or severity of that risk?_
+
+#### Prior Art
+
+_External work that is similar to this suggestion that may be helpful in understanding the RFC from a user or development perspective._
 
 ## User Guide Explanation
 
@@ -32,18 +58,6 @@ _Document the change for the user, rather than the developer:_
 ## Reference Explanation
 
 _For the developer, give the technical specification of the change with the appropriate level of exactness. Cover requirements, invariants, and corner cases. This is to used to define and debug the behavior for those building the change rather than explain it to the user._
-
-## Trade-offs and Alternatives
-
-_What trade-offs does pursuing this involve? What are other options that have been considered but are not being pursued?_
-
-## Risks & Mitigations
-
-_What could go wrong _along with_ what should be proactively done to reduce the likelihood or severity of that risk?_
-
-## Prior Art
-
-_External work that is similar to this suggestion that may be helpful in understanding the RFC from a user or development perspective._
 
 ## Future Work
 
