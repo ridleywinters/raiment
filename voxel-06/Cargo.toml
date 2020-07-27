@@ -1,0 +1,15 @@
+[package]
+name = "voxel-main"
+version = "0.1.1"
+edition = "2018"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+kiss3d = { version = "0.24.1", path = "../kiss3d" }
+nalgebra = "0.21.1"
+rand = "0.7.3"
+image = "0.23.6"
+glob = "0.3.0"
+alphanumeric-sort = "1.3.2"
+petgraph = "0.5.1"
