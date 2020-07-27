@@ -27,6 +27,12 @@ _What is the use case? Who does it benefit? When will they encounter this and ho
 * _Next bullet_
 * _Next bullet_
 
+#### Out of Scope
+
+* _Bullet list of any functionality explicitly being deferred to keep the RFC focused_
+* _Next bullet_
+* _Next bullet_
+
 ## Context
 
 #### Background
@@ -61,7 +67,7 @@ _For the developer, give the technical specification of the change with the appr
 
 ## Future Work
 
-_What is out of scope for this change, but may be enabled or related to this change? This section should be primarily describe what is _not_ part of this change rather than to pitch future possibilities._
+_Future possibilities, ideas, and other freeform thoughts about what might be possible after the RFC is complete. This explicitly is for content outside the scopre of the RFC itself._
 
 ## Open issues and questions
 
