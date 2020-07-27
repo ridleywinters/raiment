@@ -3,6 +3,8 @@
 ![](https://img.shields.io/static/v1?label=Code%20Quality&message=prototype&color=55f)
 ![](https://img.shields.io/static/v1?label=Target%20Audience&message=hobbyist&color=55f)
 
+Raiment is the code name for the engine being used in the game Kestrel.  It is in a very early prototype phase.
+
 ## Getting Started
 
 TODO
