@@ -11,7 +11,7 @@ assignees: ''
 
 _One paragraph synopsis of the request for change_
 
-## Motivation
+## Purpose
 
 _What is the use case? Who does it benefit? When will they encounter this and how will it benefit them? What is the outcome if this problem is solved?_
 
@@ -51,7 +51,9 @@ _What could go wrong _along with_ what should be proactively done to reduce the 
 
 _External work that is similar to this suggestion that may be helpful in understanding the RFC from a user or development perspective._
 
-## User Guide Explanation
+## Documentation
+
+#### User Guide Explanation
 
 _Document the change for the user, rather than the developer:_
 
@@ -61,7 +63,7 @@ _Document the change for the user, rather than the developer:_
 * _Is there any need for a migration guide for users?_
 * _How does the beginner think about this? The expert?_
 
-## Reference Explanation
+#### Reference Explanation
 
 _For the developer, give the technical specification of the change with the appropriate level of exactness. Cover requirements, invariants, and corner cases. This is to used to define and debug the behavior for those building the change rather than explain it to the user._
 
@@ -69,9 +71,13 @@ _For the developer, give the technical specification of the change with the appr
 
 _Future possibilities, ideas, and other freeform thoughts about what might be possible after the RFC is complete. This explicitly is for content outside the scopre of the RFC itself._
 
-## Open issues and questions
+## Issues and questions
+
+#### Open
 
 _Questions to be resolved before work proceeds with this RFC._
+
+#### Resolved
 
 ## FAQ
 
