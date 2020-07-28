@@ -27,9 +27,9 @@ _What is the use case? Who does it benefit? When will they encounter this and ho
 
 #### Implementation
 
-* _Ideas on plan to implement_
-* _Next bullet_
-* _Next bullet_
+* [ ] _Ideas on plan to implement_
+* [ ] _Next bullet_
+* [ ] _Next bullet_
 
 ## Context
 
