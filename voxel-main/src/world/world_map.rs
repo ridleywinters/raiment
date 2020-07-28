@@ -1,7 +1,7 @@
 use rand::Rng;
+use std::cell::*;
 use std::collections::HashMap;
 use std::collections::HashSet;
-use std::cell::*;
 
 use crate::world::tile::*;
 
@@ -31,18 +31,17 @@ impl FindPathOptions {
     }
 }
 
-
 pub struct WorldRegion {
     pub sync_id: u64,
     pub chunk_sync_ids: HashMap<(i64, i64, i64), u64>,
     pub tiles: [Tile; REGION_SIZE * REGION_SIZE],
 
-    pub region_x : i64,  // region = tile / REGION_SIZE 
-    pub region_y : i64,
+    pub region_x: i64, // region = tile / REGION_SIZE
+    pub region_y: i64,
 }
 
 impl WorldRegion {
-    pub fn new(region_x : i64, region_y : i64) -> Self {
+    pub fn new(region_x: i64, region_y: i64) -> Self {
         println!("Building heightmap ({}, {})...", region_x, region_y);
         let mut rng = rand::thread_rng();
         let offset_x = rng.gen_range(0.0, 100.0) + region_x as f32 * REGION_SIZE as f32;
@@ -52,7 +51,7 @@ impl WorldRegion {
 
         let mut heightmap: [Tile; REGION_SIZE * REGION_SIZE] =
             [Tile::new(); REGION_SIZE * REGION_SIZE];
-        for y in 0..REGION_SIZE  {
+        for y in 0..REGION_SIZE {
             for x in 0..REGION_SIZE {
                 let a = offset_x
                     + (x as f32 * scale_x) * std::f32::consts::PI / (REGION_SIZE as f32 / 2.0);
@@ -79,7 +78,7 @@ impl WorldRegion {
     }
 
     pub fn length(&self) -> i64 {
-        REGION_SIZE as i64       
+        REGION_SIZE as i64
     }
 
     pub fn tile(&self, x: i64, y: i64) -> Tile {
@@ -168,7 +167,7 @@ impl WorldRegion {
 }
 
 pub struct WorldMap {
-    regions : RefCell<HashMap<(i64, i64), WorldRegion>>,
+    regions: RefCell<HashMap<(i64, i64), WorldRegion>>,
 
     // Allow sections of the map to be locked for editing
     // by a particular actor
@@ -177,7 +176,7 @@ pub struct WorldMap {
     locked_paths: HashMap<u64, Vec<(i64, i64)>>,
 }
 
-fn coords (x : i64, y : i64) -> (i64, i64, i64, i64) {
+fn coords(x: i64, y: i64) -> (i64, i64, i64, i64) {
     let rx = if x < 0 { x / 64 - 1 } else { x / 64 };
     let ry = if y < 0 { y / 64 - 1 } else { y / 64 };
     let mut tx = x - rx * REGION_SIZE as i64;
@@ -190,7 +189,7 @@ fn coords (x : i64, y : i64) -> (i64, i64, i64, i64) {
         ty -= 1;
     }
 
-    if tx < 0 || tx >= REGION_SIZE as i64{
+    if tx < 0 || tx >= REGION_SIZE as i64 {
         panic!("Invalid tile value: x={}, rx={}, tx={}", x, rx, tx);
     }
     if ty < 0 || ty >= REGION_SIZE as i64 {
@@ -203,14 +202,14 @@ fn coords (x : i64, y : i64) -> (i64, i64, i64, i64) {
 impl WorldMap {
     pub fn new() -> Self {
         Self {
-            regions : RefCell::new(HashMap::new()),
+            regions: RefCell::new(HashMap::new()),
             lock_id_counter: 0,
             locked_regions: HashMap::new(),
             locked_paths: HashMap::new(),
         }
     }
 
-    fn region(&self, x : i64, y : i64) -> Ref<'_, WorldRegion> {
+    fn region(&self, x: i64, y: i64) -> Ref<'_, WorldRegion> {
         let rx = if x < 0 { x / 64 - 1 } else { x / 64 };
         let ry = if y < 0 { y / 64 - 1 } else { y / 64 };
 
@@ -223,7 +222,7 @@ impl WorldMap {
         Ref::map(self.regions.borrow(), |m| m.get(&key).unwrap())
     }
 
-    fn region_mut<'a>(&mut self, x : i64, y : i64) -> RefMut<'_, WorldRegion> {
+    fn region_mut<'a>(&mut self, x: i64, y: i64) -> RefMut<'_, WorldRegion> {
         let rx = if x < 0 { x / 64 - 1 } else { x / 64 };
         let ry = if y < 0 { y / 64 - 1 } else { y / 64 };
 
@@ -238,17 +237,17 @@ impl WorldMap {
 
     pub fn height(&self, x: i64, y: i64) -> i32 {
         let (_, _, tx, ty) = coords(x, y);
-        self.region(x,y).height(tx, ty)
+        self.region(x, y).height(tx, ty)
     }
 
     pub fn tile(&self, x: i64, y: i64) -> Tile {
         let (_, _, tx, ty) = coords(x, y);
-        self.region(x,y).tile(tx, ty)
+        self.region(x, y).tile(tx, ty)
     }
 
     pub fn tile_mut(&mut self, x: i64, y: i64) -> RefMut<'_, Tile> {
         let (_, _, tx, ty) = coords(x, y);
-        RefMut::map(self.region_mut(x, y), |m| m.tile_mut(tx,ty))
+        RefMut::map(self.region_mut(x, y), |m| m.tile_mut(tx, ty))
     }
 
     pub fn tile3(&self, x: i64, y: i64, z: i64) -> TileKind {
@@ -279,7 +278,7 @@ impl WorldMap {
     pub fn update(&mut self) {
         for (_key, region) in self.regions.borrow_mut().iter_mut() {
             region.update();
-        }        
+        }
     }
 
     pub fn update_tile_ages(&mut self) {
@@ -342,8 +341,8 @@ impl WorldMap {
         let region = entry.unwrap().clone();
 
         for y in region.y..region.y + region.length {
-            for x in region.x..region.x + region.width {                
-                self.tile_mut(x,y).set_locked(false);
+            for x in region.x..region.x + region.width {
+                self.tile_mut(x, y).set_locked(false);
             }
         }
         self.locked_regions.remove(&key);
@@ -365,7 +364,7 @@ impl WorldMap {
         //
         for pair in path {
             let (x, y) = pair;
-            self.tile_mut(*x,*y).set_locked(true);
+            self.tile_mut(*x, *y).set_locked(true);
         }
 
         let key = self.lock_id_counter;

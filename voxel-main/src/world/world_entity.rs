@@ -1,5 +1,5 @@
 use crate::world::Graphics;
-use na::{ Translation3 };
+use na::Translation3;
 
 pub struct WorldEntityState {
     sync_id: u64,

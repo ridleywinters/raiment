@@ -67,13 +67,13 @@ impl Strategy for GrowStrategy {
                 if tile.kind == TileKind::Concrete && tile.age() > 10_000 {
                     let mut count = 0;
 
-                    if !ctx.map.is_tile_valid(x - 1, y) ||
-                        ctx.map.tile(x - 1, y).kind == TileKind::Concrete
+                    if !ctx.map.is_tile_valid(x - 1, y)
+                        || ctx.map.tile(x - 1, y).kind == TileKind::Concrete
                     {
                         count += 1;
                     }
-                    if !ctx.map.is_tile_valid(x + 1, y) ||
-                        ctx.map.tile(x + 1, y).kind == TileKind::Concrete
+                    if !ctx.map.is_tile_valid(x + 1, y)
+                        || ctx.map.tile(x + 1, y).kind == TileKind::Concrete
                     {
                         count += 1;
                     }

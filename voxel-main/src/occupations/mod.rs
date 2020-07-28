@@ -18,3 +18,6 @@ pub use road_builder::RoadBuilder;
 
 pub mod clean_roads;
 pub use clean_roads::CleanRoads;
+
+pub mod eater;
+pub use eater::Eater;

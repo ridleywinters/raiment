@@ -135,7 +135,6 @@ impl World {
 
     // "Empty" means it is not blocked by an actor, object, or unwalkable tile
     pub fn is_tile_empty(&self, x: i64, y: i64) -> bool {
-            self.world_map.tile(x, y).is_walkable()
-            && self.actor_at_tile(x, y).is_none()
+        self.world_map.tile(x, y).is_walkable() && self.actor_at_tile(x, y).is_none()
     }
 }

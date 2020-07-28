@@ -91,9 +91,9 @@ fn sync_world_map(
     mut texture_manager: &mut TextureManager,
 ) {
     let mut t = Vec::new();
-    let scale = 4;
-    for y in (-32*scale..=32*(scale+1)).step_by(32) {
-        for x in (-32*scale..=32*(scale+1)).step_by(32) {
+    let scale = 2;
+    for y in (-32 * scale..=32 * (scale + 1)).step_by(32) {
+        for x in (-32 * scale..=32 * (scale + 1)).step_by(32) {
             t.push((x, y, 0));
         }
     }
@@ -254,21 +254,27 @@ fn main() {
         for _ in 0..1 {
             world
                 .build_actor()
-                .build(&mut rng, &mut world, &|| Box::new(RoadBuilder::new()));
+                .build(&mut rng, &mut world, &|| Box::new(Eater::new()));
         }
 
-        if true {
-            for _ in 0..24 {
+        if false {
+            for _ in 0..2 {
+                world
+                    .build_actor()
+                    .build(&mut rng, &mut world, &|| Box::new(RoadBuilder::new()));
+            }
+
+            for _ in 0..4 {
                 world
                     .build_actor()
                     .build(&mut rng, &mut world, &|| Box::new(HouseBuilder::new()));
             }
-            for _ in 0..2 {
+            for _ in 0..8 {
                 world
                     .build_actor()
                     .build(&mut rng, &mut world, &|| Box::new(Farmer::new()));
             }
-            for _ in 0..20 {
+            for _ in 0..0 {
                 match rng.gen_range(0, 100) {
                     0..=9 => {
                         world.build_actor().build(

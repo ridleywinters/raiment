@@ -37,9 +37,9 @@ impl BuildingStrategy {
         BuildingStrategy {
             plan: PlotPlan {
                 plot: (0, 0, 0, 0),
-                height : 0,
+                height: 0,
                 region_key: 0,
-                state: PlotPlanState::Init,                
+                state: PlotPlanState::Init,
             },
         }
     }
@@ -70,7 +70,7 @@ enum PlotPlanState {
 
 struct PlotPlan {
     plot: (i64, i64, i64, i64),
-    height : i64,
+    height: i64,
     region_key: u64,
     state: PlotPlanState,
 }
@@ -289,10 +289,9 @@ impl PlotPlan {
 
                 for y in y0 + 1..y1 - 1 {
                     for x in x0 + 1..x1 - 1 {
-                        ctx.map.set_kind(x,y, TileKind::_DebugTile, true);
+                        ctx.map.set_kind(x, y, TileKind::_DebugTile, true);
                         let mut tile = ctx.map.tile_mut(x, y);
                         tile.set_walkable(false);
-                        
                     }
                 }
 

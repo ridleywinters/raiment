@@ -185,9 +185,9 @@ impl Strategy for RoadStrategy {
                 } else {
                     ctx.map.unlock_path(self.path_key);
                     self.path_key = 0;
-                    self.state = WaitThen{
-                        expiration : ctx.game_time + ctx.rng.gen_range(1_000, 10_000),
-                        next_state : Box::new(Init),
+                    self.state = WaitThen {
+                        expiration: ctx.game_time + ctx.rng.gen_range(1_000, 10_000),
+                        next_state: Box::new(Init),
                     }
                 }
             }

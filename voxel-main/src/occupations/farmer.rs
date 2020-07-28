@@ -93,8 +93,8 @@ impl PlotPlan {
                 let width = ctx.rng.gen_range(6, 20 + 1);
                 let height = ctx.rng.gen_range(6, 20 + 1);
 
-                let x0 = ctx.rng.gen_range(-150, 150);
-                let y0 = ctx.rng.gen_range(-150, 150);
+                let x0 = ctx.rng.gen_range(-50, 50);
+                let y0 = ctx.rng.gen_range(-50, 50);
                 let x1 = x0 + width;
                 let y1 = y0 + height;
 

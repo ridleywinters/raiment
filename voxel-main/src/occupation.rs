@@ -47,3 +47,10 @@ pub enum TaskStatus {
 pub trait Task {
     fn update(&mut self, context: &mut Context) -> TaskStatus;
 }
+
+pub enum Status2 {
+    Continue,
+    Wait(u64),
+    Success,
+    Failure,
+}
