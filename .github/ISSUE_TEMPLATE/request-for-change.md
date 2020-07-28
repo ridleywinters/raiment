@@ -45,7 +45,7 @@ _What trade-offs does pursuing this involve? What are other options that have be
 
 #### User Guide Explanation
 
-_Document the change for the user, rather than the developer. What concepts are added, removed, or changes? _Are there examples to show the intent? What's the mental model for thinking about this change? Is there any need for a migration guide for users? How does the beginner think about this? The expert? 
+_Document the change for the user, rather than the developer. What concepts are added, removed, or changes? Are there examples to show the intent? What's the mental model for thinking about this change? Is there any need for a migration guide for users? How does the beginner think about this? The expert? 
 
 #### Reference Explanation
 
