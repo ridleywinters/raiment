@@ -8,14 +8,13 @@ on:
 
 env:
   CARGO_TERM_COLOR: always
-  working-directory: ./voxel-main 
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
+    - name: Change directory
+      run: cd voxel-main
     - uses: actions/checkout@v2
     - name: Build
       run: cargo build --verbose
