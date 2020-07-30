@@ -1,7 +1,7 @@
 ---
 name: Request for Change (RFC)
 about: Open a formal request for change
-title: '[RFC] '
+title: "[RFC] "
 labels: rfc
 assignees: ''
 
@@ -54,4 +54,3 @@ _For the developer, give the technical specification of the change with the appr
 ## FAQ (open & resolved)
 
 _Questions that don't fit well in he template sections above. Include an "OPEN:" prefix on questions that do not yet have decided answers._
-
