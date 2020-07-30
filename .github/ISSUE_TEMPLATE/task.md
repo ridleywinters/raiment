@@ -1,6 +1,6 @@
 ---
 name: Task
-about: Proposal for a small, clearly defined change
+about: Proposal for a small, clearly defined change (hours of work)
 title: "[TASK] "
 labels: task
 assignees: ''

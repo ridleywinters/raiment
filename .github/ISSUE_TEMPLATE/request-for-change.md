@@ -1,6 +1,6 @@
 ---
 name: Request for Change (RFC)
-about: Open a formal request for change
+about: Propose a request for significant change (many tasks / days of work)
 title: "[RFC] "
 labels: rfc
 assignees: ''
