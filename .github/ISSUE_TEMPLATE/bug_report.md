@@ -7,32 +7,21 @@ assignees: ''
 
 ---
 
-**Describe the bug**
-A clear and concise description of what the bug is.
+#### Summary
 
-**Steps to recreate**
-Steps to recreate the behavior:
-1. Go to '...'
-2. Click on '....'
-3. Scroll down to '....'
-4. See error
+_ A clear and concise description of what the bug is._
 
-**Expected behavior**
-A clear and concise description of what you expected to happen.
+#### Steps to recreate
 
-**Screenshots**
-If applicable, add screenshots to help explain your problem.
+1. _First step_
+2. _Next step_
+3. _Next step_
+4. BUG: _describe the manifestation of the bug_
 
-**Desktop (please complete the following information):**
- - OS: [e.g. iOS]
- - Browser [e.g. chrome, safari]
- - Version [e.g. 22]
+**Expected behavior**: _A clear and concise description of what you expected to happen._
 
-**Smartphone (please complete the following information):**
- - Device: [e.g. iPhone6]
- - OS: [e.g. iOS8.1]
- - Browser [e.g. stock browser, safari]
- - Version [e.g. 22]
+#### Screenshots
 
-**Additional context**
-Add any other context about the problem here.
+#### Additional context
+
+_Add any other context about the problem here_
