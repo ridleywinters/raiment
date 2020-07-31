@@ -1,11 +1,12 @@
 ---
 name: Idea
-about: Informally suggest an idea for the project
-title: '[IDEA] '
+about: Informally suggest an idea for the project, large or small
+title: "[IDEA] "
 labels: idea
 assignees: ''
 
 ---
 
-**Describe your idea or request. Anything goes!**
+# Idea
 
+_Describe your idea here. Anything goes!_
