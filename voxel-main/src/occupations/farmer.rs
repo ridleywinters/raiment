@@ -1,5 +1,5 @@
 use crate::actor::ActorState;
-use crate::occupation::{Context, Occupation, Strategy, Task, TaskStatus};
+use crate::occupation::{Context, Occupation, Status2, Strategy, Task, TaskStatus};
 use crate::tasks;
 use crate::world::TileKind;
 use rand::Rng;
@@ -39,6 +39,7 @@ impl FarmingStrategy {
                 plot: (0, 0, 0, 0),
                 region_key: 0,
                 state: PlotPlanState::Init,
+                scaffold_wait: 0,
             },
         }
     }
@@ -64,12 +65,15 @@ enum PlotPlanState {
     TillPlot,
     Till(TillTask),
     Done(u64, Box<tasks::RandomMove>),
+    MoveToBeacon(tasks::MoveToTask),
 }
 
 struct PlotPlan {
     plot: (i64, i64, i64, i64),
     region_key: u64,
     state: PlotPlanState,
+
+    scaffold_wait: u64,
 }
 
 impl PlotPlan {
@@ -93,8 +97,9 @@ impl PlotPlan {
                 let width = ctx.rng.gen_range(6, 20 + 1);
                 let height = ctx.rng.gen_range(6, 20 + 1);
 
-                let x0 = ctx.rng.gen_range(-50, 50);
-                let y0 = ctx.rng.gen_range(-50, 50);
+                let (px, py) = ctx.actor_state.position();
+                let x0 = px + ctx.rng.gen_range(-50, 50);
+                let y0 = py + ctx.rng.gen_range(-50, 50);
                 let x1 = x0 + width;
                 let y1 = y0 + height;
 
@@ -280,15 +285,30 @@ impl PlotPlan {
 
             Done(expiration, ref mut task) => {
                 if ctx.game_time > expiration {
-                    self.state = ChoosePlot {
-                        considerations: 10,
-                        best_delta: None,
-                    }
+                    let dest = ctx.actor_state.beacon_point_with_random(ctx.rng, 10);
+                    self.state =
+                        MoveToBeacon(tasks::MoveToTask::new_with_destination(dest).build());
                 } else {
                     if task.update(&mut ctx) != TaskStatus::Active {
                         task.reset();
                     }
                 }
+            }
+
+            MoveToBeacon(ref mut task) => {
+                self.scaffold_wait = tasks::task2_wrapper(
+                    self.scaffold_wait,
+                    match task.update(&mut ctx) {
+                        Status2::Success | Status2::Failure => {
+                            self.state = ChoosePlot {
+                                considerations: 10,
+                                best_delta: None,
+                            };
+                            Status2::Continue
+                        }
+                        value => value,
+                    },
+                )
             }
         };
     }

@@ -3,13 +3,15 @@ use rand::Rng;
 
 use crate::actor::Actor;
 use crate::occupation::Occupation;
-use crate::world::world_map::{WorldMap, REGION_SIZE};
+use crate::world::world_map::WorldMap;
 use crate::world_entity::*;
 
 pub struct ActorBuilder {
     name: Option<String>,
     is_player: bool,
     is_ethereal: bool,
+    position: Option<(i64, i64)>,
+    beacon: Option<(i64, i64)>,
 }
 
 impl ActorBuilder {
@@ -18,11 +20,26 @@ impl ActorBuilder {
             name: None,
             is_player: false,
             is_ethereal: false,
+            position: None,
+            beacon: None,
         }
     }
 
     pub fn with_name<'a>(&'a mut self, name: &'a str) -> &'a mut Self {
         self.name = Some(name.to_string());
+        self
+    }
+
+    pub fn with_position<'a>(&'a mut self, position: (i64, i64)) -> &'a mut Self {
+        self.position = Some(position);
+        if self.beacon.is_none() {
+            self.beacon = Some(position);
+        }
+        self
+    }
+
+    pub fn with_beacon_point<'a>(&'a mut self, position: (i64, i64)) -> &'a mut Self {
+        self.beacon = Some(position);
         self
     }
 
@@ -36,12 +53,7 @@ impl ActorBuilder {
         self
     }
 
-    pub fn build(
-        &self,
-        rng: &mut rand::rngs::ThreadRng,
-        world: &mut World,
-        f: &dyn Fn() -> Box<dyn Occupation>,
-    ) {
+    pub fn build(&self, world: &mut World, f: &dyn Fn() -> Box<dyn Occupation>) {
         let names = vec![
             "Raether", "Telenor", "Sentor", "Baaren", "Celinac", "Coplin", "Boran", "Ilia",
             "Kelis", "Elli", "Len", "Bilric", "Rownal", "Cal", "Wern", "Lendole", "Ilabin",
@@ -53,16 +65,27 @@ impl ActorBuilder {
 
             actor.name = match &self.name {
                 None => {
-                    let name = names.choose(rng);
+                    let name = names.choose(&mut world.rng);
                     name.unwrap().to_string()
                 }
                 Some(name) => name.to_string(),
             };
 
-            actor.state.set_position(
-                rng.gen_range(0, REGION_SIZE) as i64,
-                rng.gen_range(0, REGION_SIZE) as i64,
-            );
+            let p = if let Some(position) = self.position {
+                position
+            } else {
+                (
+                    world.rng.gen_range(0, 64) as i64,
+                    world.rng.gen_range(0, 64) as i64,
+                )
+            };
+            actor.state.set_position(p.0, p.1);
+
+            if let Some(p) = self.beacon {
+                actor.state.set_beacon_point(p);
+            } else {
+                actor.state.set_beacon_point(actor.state.position());
+            }
 
             actor.occupation = f();
             actor.occupation.init(&mut actor.state);
@@ -90,7 +113,7 @@ impl ActorBuilder {
 }
 
 pub struct World {
-    _seed: usize,
+    pub rng: rand::rngs::ThreadRng,
     pub player_index: usize,
     pub actors: Vec<Actor>,
     pub entities: WorldEntityList,
@@ -98,9 +121,9 @@ pub struct World {
 }
 
 impl World {
-    pub fn new(_rng: &mut rand::rngs::ThreadRng) -> Self {
+    pub fn new() -> Self {
         Self {
-            _seed: 52329,
+            rng: rand::thread_rng(),
             player_index: 0,
             actors: vec![],
             entities: WorldEntityList::new(),

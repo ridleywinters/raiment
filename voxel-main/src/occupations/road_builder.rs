@@ -1,9 +1,8 @@
 use crate::actor::ActorState;
-use crate::occupation::{Context, Occupation, Strategy, Task, TaskStatus};
+use crate::occupation::{Context, Occupation, Status2, Strategy, Task, TaskStatus};
 use crate::tasks;
 use crate::world::{FindPathOptions, TileKind};
 use rand::Rng;
-use std::collections::HashSet;
 
 /*
     Pseudo-code
@@ -43,6 +42,7 @@ impl Occupation for RoadBuilder {
 #[derive(PartialEq, Clone)]
 enum PlanState {
     Init,
+    MoveToBeacon(tasks::MoveToTask),
     Wander {
         iterations: u8,
     },
@@ -63,6 +63,7 @@ struct RoadStrategy {
     path: Vec<(i64, i64)>,
     move_path: Vec<(i64, i64)>,
     next_move: u64,
+    scaffold_wait: u64,
 }
 
 impl RoadStrategy {
@@ -74,6 +75,8 @@ impl RoadStrategy {
             path: Vec::new(),
             move_path: Vec::new(),
             next_move: 0,
+
+            scaffold_wait: 0,
         }
     }
 }
@@ -84,8 +87,26 @@ impl Strategy for RoadStrategy {
 
         match self.state {
             Init => {
-                self.state = Wander { iterations: 2 };
+                let bx = ctx.rng.gen_range(0, 64);
+                let by = ctx.rng.gen_range(0, 64);
+                println!("Road Builder moving to {}, {}", bx, by);
+                self.state =
+                    MoveToBeacon(tasks::MoveToTask::new_with_destination((bx, by)).build());
             }
+
+            MoveToBeacon(ref mut task) => {
+                self.scaffold_wait = tasks::task2_wrapper(
+                    self.scaffold_wait,
+                    match task.update(&mut ctx) {
+                        Status2::Success | Status2::Failure => {
+                            self.state = Wander { iterations: 10 };
+                            Status2::Continue
+                        }
+                        value => value,
+                    },
+                )
+            }
+
             Wander { iterations } => {
                 if iterations == 0 {
                     self.state = ChoosePath;
@@ -104,10 +125,12 @@ impl Strategy for RoadStrategy {
                 }
             }
             ChoosePath => {
-                let mut x0 = ctx.rng.gen_range(-150, 150);
-                let mut x1 = ctx.rng.gen_range(-150, 150);
-                let mut y0 = ctx.rng.gen_range(-150, 150);
-                let mut y1 = ctx.rng.gen_range(-150, 150);
+                let range = 50;
+                let (px, py) = ctx.actor_state.position();
+                let mut x0 = px + ctx.rng.gen_range(-range, range);
+                let mut x1 = px + ctx.rng.gen_range(-range, range);
+                let mut y0 = py + ctx.rng.gen_range(-range, range);
+                let mut y1 = py + ctx.rng.gen_range(-range, range);
 
                 if x1 < x0 {
                     std::mem::swap(&mut x0, &mut x1);
@@ -123,6 +146,7 @@ impl Strategy for RoadStrategy {
                     let mut opts = FindPathOptions::new();
                     opts.add_invalid_tile(TileKind::Plants);
                     opts.add_invalid_tile(TileKind::Tilled);
+                    opts.prefer_grids = true;
 
                     let path = ctx.map.find_path((x0, y0), (x1, y1), Some(opts));
                     if let Some(path) = path {

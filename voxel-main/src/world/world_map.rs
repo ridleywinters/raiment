@@ -5,7 +5,7 @@ use std::collections::HashSet;
 
 use crate::world::tile::*;
 
-pub const REGION_SIZE: usize = 64;
+const REGION_SIZE: usize = 64;
 
 #[derive(Copy, Clone)]
 pub struct MapRegion {
@@ -17,12 +17,14 @@ pub struct MapRegion {
 
 pub struct FindPathOptions {
     invalid_tilekinds: HashSet<TileKind>,
+    pub prefer_grids: bool,
 }
 
 impl FindPathOptions {
     pub fn new() -> Self {
         Self {
             invalid_tilekinds: HashSet::new(),
+            prefer_grids: false,
         }
     }
 
@@ -31,7 +33,27 @@ impl FindPathOptions {
     }
 }
 
-pub struct WorldRegion {
+// Likely a temporary structure
+struct WorldProps {
+    offset_x: f32,
+    offset_y: f32,
+    scale_x: f32,
+    scale_y: f32,
+}
+
+impl WorldProps {
+    fn new() -> Self {
+        let mut rng = rand::thread_rng();
+        Self {
+            offset_x: rng.gen_range(0.0, 100.0),
+            offset_y: rng.gen_range(0.0, 100.0),
+            scale_x: rng.gen_range(0.5, 1.5),
+            scale_y: rng.gen_range(0.5, 1.5),
+        }
+    }
+}
+
+struct WorldRegion {
     pub sync_id: u64,
     pub chunk_sync_ids: HashMap<(i64, i64, i64), u64>,
     pub tiles: [Tile; REGION_SIZE * REGION_SIZE],
@@ -41,24 +63,31 @@ pub struct WorldRegion {
 }
 
 impl WorldRegion {
-    pub fn new(region_x: i64, region_y: i64) -> Self {
+    pub fn new(world_props: &WorldProps, region_x: i64, region_y: i64) -> Self {
         println!("Building heightmap ({}, {})...", region_x, region_y);
-        let mut rng = rand::thread_rng();
-        let offset_x = rng.gen_range(0.0, 100.0) + region_x as f32 * REGION_SIZE as f32;
-        let offset_y = rng.gen_range(0.0, 100.0) + region_y as f32 * REGION_SIZE as f32;
-        let scale_x = rng.gen_range(0.5, 1.5);
-        let scale_y = rng.gen_range(0.5, 1.5);
 
         let mut heightmap: [Tile; REGION_SIZE * REGION_SIZE] =
             [Tile::new(); REGION_SIZE * REGION_SIZE];
-        for y in 0..REGION_SIZE {
-            for x in 0..REGION_SIZE {
-                let a = offset_x
-                    + (x as f32 * scale_x) * std::f32::consts::PI / (REGION_SIZE as f32 / 2.0);
-                let b = offset_y
-                    + (y as f32 * scale_y) * std::f32::consts::PI / (REGION_SIZE as f32 / 4.0);
-                let z = 2.0 * ((a.sin() + 0.5) + (b.cos() + 0.5));
-                let i = y * REGION_SIZE + x;
+        for ty in 0..REGION_SIZE {
+            for tx in 0..REGION_SIZE {
+                let x = tx as f32;
+                let y = ty as f32;
+                let dx = WorldRegion::height3(world_props, region_x, region_y, x, y);
+                let dy = WorldRegion::height3(world_props, region_x, region_y, x + dx, y + dx);
+                let sx = 1.0;
+                let sy = 1.0;
+
+                let z1 = 1.25
+                    * WorldRegion::height1(
+                        world_props,
+                        region_x,
+                        region_y,
+                        sx * (x + dx),
+                        sy * (y + dy),
+                    );
+                let z2 = WorldRegion::height2(world_props, region_x, region_y, x, y);
+                let z = z1 * z2.max(1.5);
+                let i = ty * REGION_SIZE + tx;
                 heightmap[i].kind = TileKind::Grass;
                 heightmap[i].height = (z as i16).max(1);
             }
@@ -71,6 +100,54 @@ impl WorldRegion {
             region_x,
             region_y,
         }
+    }
+
+    fn height1(world_props: &WorldProps, region_x: i64, region_y: i64, x: f32, y: f32) -> f32 {
+        let period_x = std::f32::consts::PI / (REGION_SIZE as f32 * 2.131);
+        let period_y = std::f32::consts::PI / (REGION_SIZE as f32 * 1.63);
+
+        let offset_x = world_props.offset_x + (region_x as f32 * REGION_SIZE as f32);
+        let offset_y = world_props.offset_y + (region_y as f32 * REGION_SIZE as f32);
+        let scale_x = world_props.scale_x;
+        let scale_y = world_props.scale_y;
+        let scale_z = 1.0;
+
+        let a = (offset_x + (x as f32)) * scale_x * period_x;
+        let b = (offset_y + (y as f32)) * scale_y * period_y;
+        let z = scale_z * 2.0 * ((a.sin() + 0.5) + (b.cos() + 0.5));
+        z
+    }
+
+    fn height2(world_props: &WorldProps, region_x: i64, region_y: i64, x: f32, y: f32) -> f32 {
+        let period_x = std::f32::consts::PI / (REGION_SIZE as f32 * 7.3);
+        let period_y = std::f32::consts::PI / (REGION_SIZE as f32 * 4.11);
+
+        let offset_x = world_props.offset_x + (region_x as f32 * REGION_SIZE as f32);
+        let offset_y = world_props.offset_y + (region_y as f32 * REGION_SIZE as f32);
+        let scale_x = world_props.scale_x;
+        let scale_y = world_props.scale_y;
+        let scale_z = 4.0;
+
+        let a = (offset_x + (x as f32)) * scale_x * period_x;
+        let b = (offset_y + (y as f32)) * scale_y * period_y;
+        let z = scale_z * 2.0 * ((a.sin() + 0.5) + (b.cos() + 0.5));
+        (8.0 * z).powf(1.0 / 4.0)
+    }
+
+    fn height3(world_props: &WorldProps, region_x: i64, region_y: i64, x: f32, y: f32) -> f32 {
+        let period_x = std::f32::consts::PI / (REGION_SIZE as f32 * 3.335);
+        let period_y = std::f32::consts::PI / (REGION_SIZE as f32 * 2.459);
+
+        let offset_x = world_props.offset_x + (region_x as f32 * REGION_SIZE as f32);
+        let offset_y = world_props.offset_y + (region_y as f32 * REGION_SIZE as f32);
+        let scale_x = world_props.scale_x;
+        let scale_y = world_props.scale_y;
+        let scale_z = 4.0;
+
+        let a = (offset_x + (x as f32)) * scale_x * period_x;
+        let b = (offset_y + (y as f32)) * scale_y * period_y;
+        let z = scale_z * 2.0 * ((a.sin() + 0.5) + (b.cos() + 0.5));
+        z
     }
 
     pub fn width(&self) -> i64 {
@@ -167,6 +244,8 @@ impl WorldRegion {
 }
 
 pub struct WorldMap {
+    props: WorldProps,
+
     regions: RefCell<HashMap<(i64, i64), WorldRegion>>,
 
     // Allow sections of the map to be locked for editing
@@ -202,6 +281,7 @@ fn coords(x: i64, y: i64) -> (i64, i64, i64, i64) {
 impl WorldMap {
     pub fn new() -> Self {
         Self {
+            props: WorldProps::new(),
             regions: RefCell::new(HashMap::new()),
             lock_id_counter: 0,
             locked_regions: HashMap::new(),
@@ -215,7 +295,7 @@ impl WorldMap {
 
         let key = (rx, ry);
         if self.regions.borrow().get(&key).is_none() {
-            let region = WorldRegion::new(rx, ry);
+            let region = WorldRegion::new(&self.props, rx, ry);
             self.regions.borrow_mut().insert(key, region);
         }
 
@@ -228,7 +308,7 @@ impl WorldMap {
 
         let key = (rx, ry);
         if self.regions.borrow().get(&key).is_none() {
-            let region = WorldRegion::new(rx, ry);
+            let region = WorldRegion::new(&self.props, rx, ry);
             self.regions.borrow_mut().insert(key, region);
         }
 
@@ -412,8 +492,15 @@ impl WorldMap {
 
         let mut dict = HashMap::new();
         let mut tcid = HashMap::new();
-        for y in 0..(REGION_SIZE as i64) {
-            for x in 0..(REGION_SIZE as i64) {
+
+        let expand = 16;
+        let x0 = begin.0.min(end.0) - expand;
+        let x1 = begin.0.max(end.0) + expand;
+        let y0 = begin.1.min(end.1) - expand;
+        let y1 = begin.1.max(end.1) + expand;
+
+        for y in y0..y1 {
+            for x in x0..x1 {
                 let tile = self.tile(x, y);
                 if !tile.is_walkable() {
                     continue;
@@ -434,7 +521,7 @@ impl WorldMap {
                 let mut cost = 5 * (nile.height - tile.height).max(0) as i32;
 
                 // Strongly favor a grid
-                if ex % 16 != 3 && ey % 16 != 3 {
+                if options.prefer_grids && ex % 16 != 3 && ey % 16 != 3 {
                     cost += 10;
                 }
 
@@ -454,8 +541,8 @@ impl WorldMap {
             }
         };
 
-        for y in 0..(REGION_SIZE as i64) {
-            for x in 0..(REGION_SIZE as i64) {
+        for y in y0..y1 {
+            for x in x0..x1 {
                 let entry = dict.get(&(x, y));
                 if entry.is_none() {
                     continue;

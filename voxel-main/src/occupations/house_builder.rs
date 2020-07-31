@@ -1,5 +1,5 @@
 use crate::actor::ActorState;
-use crate::occupation::{Context, Occupation, Strategy, Task, TaskStatus};
+use crate::occupation::{Context, Occupation, Status2, Strategy, Task, TaskStatus};
 use crate::tasks;
 use crate::world::TileKind;
 use rand::Rng;
@@ -40,6 +40,7 @@ impl BuildingStrategy {
                 height: 0,
                 region_key: 0,
                 state: PlotPlanState::Init,
+                scaffold_wait: 0,
             },
         }
     }
@@ -64,8 +65,9 @@ enum PlotPlanState {
     Wait(u64, Box<PlotPlanState>),
     LayFoundation,
     BuildHouse,
-    Till(LayFoundationTask),
-    Done(u64, Box<tasks::RandomMove>),
+    SetFoundationTile(LayFoundationTask),
+    Rest(u64, Box<tasks::RandomMove>),
+    MoveToBeacon(tasks::MoveToTask),
 }
 
 struct PlotPlan {
@@ -73,6 +75,8 @@ struct PlotPlan {
     height: i64,
     region_key: u64,
     state: PlotPlanState,
+
+    scaffold_wait: u64,
 }
 
 impl PlotPlan {
@@ -81,7 +85,7 @@ impl PlotPlan {
 
         match self.state {
             Init => {
-                self.state = Done(
+                self.state = Rest(
                     ctx.game_time + ctx.rng.gen_range(500, 50_000),
                     Box::new(tasks::RandomMove::new()),
                 );
@@ -100,8 +104,9 @@ impl PlotPlan {
                     _ => 6,
                 };
 
-                let x0 = ctx.rng.gen_range(-150, 150);
-                let y0 = ctx.rng.gen_range(-150, 150);
+                let (px, py) = ctx.actor_state.position();
+                let x0 = px + ctx.rng.gen_range(-50, 50);
+                let y0 = py + ctx.rng.gen_range(-50, 50);
                 let x1 = x0 + width;
                 let y1 = y0 + length;
 
@@ -264,7 +269,7 @@ impl PlotPlan {
                 if let Some((x, y, _z)) = r {
                     self.state = MoveThen(
                         MoveTo::new(x, y),
-                        Box::new(Till(LayFoundationTask {
+                        Box::new(SetFoundationTile(LayFoundationTask {
                             destination: (x, y),
                             kind: TileKind::Concrete,
                         })),
@@ -298,28 +303,51 @@ impl PlotPlan {
                 ctx.map.unlock_region(self.region_key);
                 self.region_key = 0;
 
-                self.state = Done(
+                self.state = Rest(
                     ctx.game_time + ctx.rng.gen_range(5_000, 50_000),
                     Box::new(tasks::RandomMove::new()),
                 );
             }
 
-            Till(ref mut task) => match task.update(&mut ctx) {
+            SetFoundationTile(ref mut task) => match task.update(&mut ctx) {
                 TaskStatus::Success => self.state = LayFoundation,
                 _ => {}
             },
 
-            Done(expiration, ref mut task) => {
+            Rest(expiration, ref mut task) => {
                 if ctx.game_time > expiration {
-                    self.state = ChoosePlot {
-                        considerations: 10,
-                        best_delta: None,
-                    }
+                    let dest = ctx.actor_state.beacon_point_with_random(ctx.rng, 10);
+                    self.state =
+                        MoveToBeacon(tasks::MoveToTask::new_with_destination(dest).build());
                 } else {
                     if task.update(&mut ctx) != TaskStatus::Active {
                         task.reset();
                     }
                 }
+            }
+            MoveToBeacon(ref mut task) => {
+                self.scaffold_wait = tasks::task2_wrapper(
+                    self.scaffold_wait,
+                    match task.update(&mut ctx) {
+                        Status2::Success => {
+                            println!("Builder move okay!");
+                            self.state = ChoosePlot {
+                                considerations: 10,
+                                best_delta: None,
+                            };
+                            Status2::Continue
+                        }
+                        Status2::Failure => {
+                            println!("Builder move failed!");
+                            self.state = ChoosePlot {
+                                considerations: 10,
+                                best_delta: None,
+                            };
+                            Status2::Continue
+                        }
+                        value => value,
+                    },
+                )
             }
         };
     }

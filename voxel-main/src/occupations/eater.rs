@@ -1,5 +1,5 @@
 use crate::actor::ActorState;
-use crate::occupation::{Context, Occupation, Strategy, Task, TaskStatus, Status2};
+use crate::occupation::{Context, Occupation, Status2, Strategy, Task, TaskStatus};
 use crate::tasks;
 use crate::world::TileKind;
 use rand::seq::SliceRandom;
@@ -43,8 +43,6 @@ impl EaterStrategy {
     }
 }
 
-
-
 impl Strategy for EaterStrategy {
     fn update(&mut self, ctx: Context) {
         use Status2::*;
@@ -63,8 +61,17 @@ impl Strategy for EaterStrategy {
     }
 }
 
+// Wander
+// LocateFood
+// MoveToFood
+// EatFood
+// Wander
+//
 enum EaterState {
     Wander(tasks::WanderTask),
+    LocateFood(tasks::LocateTileTask),
+    Move(tasks::MoveToTask),
+    EatFood(tasks::ChangeTileTask),
 }
 
 struct EaterPlan {
@@ -74,14 +81,16 @@ struct EaterPlan {
 impl EaterPlan {
     fn new() -> Self {
         Self {
-            state: EaterPlan::default_wander(),
+            state: EaterPlan::wander(),
         }
     }
-    fn default_wander() -> EaterState {
-        EaterState::Wander(tasks::WanderTask::new()
-            .with_delay_frames(30)
-            .with_duration_frames(2 * 60)
-            .build())
+    fn wander() -> EaterState {
+        EaterState::Wander(
+            tasks::WanderTask::new()
+                .with_delay_frames(30)
+                .with_duration_frames(2 * 6)
+                .build(),
+        )
     }
 
     fn update(&mut self, mut ctx: Context) -> Status2 {
@@ -90,13 +99,56 @@ impl EaterPlan {
 
         match self.state {
             Wander(ref mut task) => match task.update(&mut ctx) {
-                Status2::Success => {
-                    self.state = EaterPlan::default_wander();
+                Success => {
+                    self.state = LocateFood(
+                        tasks::LocateTileTask::new(TileKind::Plants)
+                            .with_attempts(10)
+                            .build(),
+                    );
                     Continue
+                }
+                value => value,
+            },
+            LocateFood(ref mut task) => match task.update(&mut ctx) {
+                Success => {
+                    self.state =
+                        Move(tasks::MoveToTask::new_with_destination(task.destination).build());
+                    Continue
+                }
+                Failure => {
+                    self.state = EaterPlan::wander();
+                    Wait(10)
+                }
+                value => value,
+            },
+
+            Move(ref mut task) => match task.update(&mut ctx) {
+                Success => {
+                    self.state = EatFood(
+                        tasks::change_tile(TileKind::Tilled)
+                            .with_src(Some(TileKind::Plants))
+                            .build(),
+                    );
+                    Continue
+                }
+                Failure => {
+                    self.state = EaterPlan::wander();
+                    Continue
+                }
+                value => value,
+            },
+
+            EatFood(ref mut task) => match task.update(&mut ctx) {
+                Success => {
+                    self.state = EaterPlan::wander();
+                    Wait(20)
+                }
+                Failure => {
+                    self.state = EaterPlan::wander();
+                    Wait(5)
                 }
                 value => value,
             },
         }
     }
 }
-

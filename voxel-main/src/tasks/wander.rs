@@ -1,12 +1,12 @@
 use rand::seq::SliceRandom;
 
-use crate::occupation::{ Context, Status2 };
+use crate::occupation::{Context, Status2};
 use Status2::*;
 use WanderTaskState::*;
 
 pub struct WanderTaskBuilder {
     delay_frames: u64,
-    duration_frames : u64,
+    duration_frames: u64,
 }
 
 impl WanderTaskBuilder {
@@ -16,15 +16,17 @@ impl WanderTaskBuilder {
             state: Init,
             expiration: 0,
             delay_frames: self.delay_frames,
-            duration_frames : self.duration_frames,
+            duration_frames: self.duration_frames,
         }
     }
 
+    // How many frames to delay between each random movement
     pub fn with_delay_frames(mut self, frames: u64) -> WanderTaskBuilder {
         self.delay_frames = frames;
         self
     }
 
+    // How many frames to wander before this task is considered done
     pub fn with_duration_frames(mut self, frames: u64) -> WanderTaskBuilder {
         self.duration_frames = frames;
         self
@@ -40,21 +42,19 @@ pub struct WanderTask {
     state: WanderTaskState,
     expiration: u64,
 
-    duration_frames : u64,
+    duration_frames: u64,
     delay_frames: u64,
 }
 
 impl WanderTask {
     pub fn new() -> WanderTaskBuilder {
-        WanderTaskBuilder { 
+        WanderTaskBuilder {
             delay_frames: 0,
-            duration_frames : 3 * 60,
+            duration_frames: 3 * 60,
         }
     }
 
     pub fn update(&mut self, ctx: &mut Context) -> Status2 {
-        
-
         match self.state {
             Init => {
                 self.expiration = ctx.game_time + self.duration_frames;

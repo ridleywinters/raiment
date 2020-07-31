@@ -1,18 +1,15 @@
-extern crate kiss3d;
-extern crate nalgebra as na;
-
-// TODO: I don't understand why these need to "forward declared"...I need to learn more
-// about Rust
 mod actor;
+mod graphics;
 mod occupation;
 mod occupations;
 mod tasks;
 mod world;
 
 use kiss3d::light::Light;
+use kiss3d::resource::TextureManager;
 use kiss3d::scene::SceneNode;
 use kiss3d::window::Window;
-use na::{Point2, Point3, Translation3, Vector3};
+use nalgebra::{Point2, Point3, Translation3, Vector3};
 use rand::Rng;
 
 use actor::Actor;
@@ -21,9 +18,9 @@ use world::*;
 
 enum Action {
     Move { x: i32, y: i32 },
-    TestFindPath,
 }
 
+// TODO: move this to a graphics subsystem module?
 fn sync_actor_node(window: &mut Window, world_map: &WorldMap, actor: &mut Actor) {
     //
     // Check if the graphics node is already in sync
@@ -57,6 +54,7 @@ fn sync_actor_node(window: &mut Window, world_map: &WorldMap, actor: &mut Actor)
     node.set_color(r, g, b);
 }
 
+// TODO: move this to a graphics subsystem module?
 struct Text {
     text: String,
     expiration: std::time::Instant,
@@ -75,30 +73,43 @@ impl Text {
     }
 }
 
+// TODO: move this to a graphics subsystem module?
 struct ChunkGeom {
     sync_id: u64,
     group: SceneNode,
 }
 
+// TODO: move this to a graphics subsystem module?
 struct WorldMapGeometry {
     chunks: HashMap<(i64, i64, i64), ChunkGeom>,
 }
 
+// TODO: move this to a graphics subsystem module?
 fn sync_world_map(
     wmg: &mut WorldMapGeometry,
     window: &mut Window,
     world: &World,
     mut texture_manager: &mut TextureManager,
 ) {
+    let (px, py) = world.actors[world.player_index].state.position();
+    let (mut ptx, mut pty) = (px / 32, py / 32);
+    if px < 0 {
+        ptx -= 1;
+    }
+    if py < 0 {
+        pty -= 1;
+    }
+    ptx *= 32;
+    pty *= 32;
+
     let mut t = Vec::new();
     let scale = 2;
     for y in (-32 * scale..=32 * (scale + 1)).step_by(32) {
         for x in (-32 * scale..=32 * (scale + 1)).step_by(32) {
-            t.push((x, y, 0));
+            t.push((ptx + x, pty + y, 0));
         }
     }
 
-    //let t = vec![(0, 0, 0), (32, 0, 0), (32, 32, 0), (0, 32, 0)];
     for (x, y, z) in t {
         let world_sync_id = world.world_map.chunk_sync_id(x, y, z);
 
@@ -132,16 +143,6 @@ fn sync_world_map(
     }
 }
 
-extern crate image;
-
-use kiss3d::resource::TextureManager;
-
-fn make_texture() -> TextureManager {
-    let mut tm = TextureManager::new();
-    tm.add(std::path::Path::new("./texture_atlas.png"), "tiles");
-    tm
-}
-
 //
 // Check input
 //
@@ -164,155 +165,106 @@ fn check_user_input(window: &Window, action_queue: &mut Vec<Action>) {
         action_queue.push(Action::Move { x: 0, y: -1 });
     }
     if window.get_key(kiss3d::event::Key::Space) == kiss3d::event::Action::Press {
-        action_queue.push(Action::TestFindPath);
+        println!("SPACE pressed");
     }
 }
 
-fn load_tileset() {
-    // for each in src/assets/tiles with n > 0
-    // load & paste into larger image
-    // save image
+//
+// Populate the world with Actors
+//
+fn populate_world(world: &mut World) {
+    use crate::occupations::*;
 
-    use glob::glob;
+    world
+        .build_actor()
+        .with_name("Kestrel")
+        .with_player(true)
+        .with_position((0, 0))
+        .build(world, &|| Box::new(Avatar::new()));
 
-    let mut paths = Vec::new();
-    for entry in glob("src/assets/tiles/[0-9][0-9]*.png").expect("Failed to read glob pattern") {
-        match entry {
-            Ok(path) => paths.push(path),
-            Err(e) => println!("{:?}", e),
-        }
+    for _ in 0..8 {
+        world.build_actor().build(world, &|| Box::new(Eater::new()));
     }
 
-    paths.sort_by(|a, b| alphanumeric_sort::compare_path(a, b));
+    if true {
+        for _ in 0..4 {
+            world
+                .build_actor()
+                .build(world, &|| Box::new(RoadBuilder::new()));
+        }
 
-    let mut imgbuf = image::ImageBuffer::new(256, 256);
-
-    // Skip the 00_ tile
-    for i in 1..paths.len() {
-        let path = &paths[i];
-
-        let img1 = image::open(path).unwrap();
-        let img = img1.as_rgba8().unwrap();
-
-        // The dimensions method returns the images width and height.
-        let dims = img.dimensions();
-        println!("Loaded tile {}x{} {}", dims.0, dims.1, path.display());
-
-        let offset = (i as u32 - 1) * 16;
-        let ox: u32 = offset % 256;
-        let oy: u32 = offset / 256;
-        for (x, y, pixel) in img.enumerate_pixels() {
-            let dst = imgbuf.get_pixel_mut(x + ox, y + oy);
-            *dst = *pixel;
+        for _ in 0..4 {
+            world
+                .build_actor()
+                .build(world, &|| Box::new(HouseBuilder::new()));
+        }
+        for _ in 0..4 {
+            world
+                .build_actor()
+                .build(world, &|| Box::new(Farmer::new()));
+        }
+        for _ in 0..10 {
+            match world.rng.gen_range(0, 100) {
+                0..=9 => {
+                    world
+                        .build_actor()
+                        .build(world, &|| Box::new(Farmer::new()));
+                }
+                10..=12 => {
+                    world
+                        .build_actor()
+                        .build(world, &|| Box::new(HouseBuilder::new()));
+                }
+                _ => {
+                    world
+                        .build_actor()
+                        .build(world, &|| Box::new(Mindlessness::new()));
+                }
+            };
+        }
+        // The GrowPlants strategy...need to think about this a bit. This is intended to be an
+        // "environmental effect", but I realize there's symmetry here that this can just be
+        // an Actor.  I also like the *game* implications that the world simulation is handled
+        // by ethereal actors.
+        for _ in 0..2 {
+            world
+                .build_actor()
+                .with_ethereal(true)
+                .build(world, &|| Box::new(GrowPlants::new()));
+        }
+        for _ in 0..4 {
+            world
+                .build_actor()
+                .with_ethereal(true)
+                .build(world, &|| Box::new(CleanRoads::new()));
         }
     }
-    imgbuf.save("texture_atlas.png").unwrap();
 }
 
 fn main() {
-    load_tileset();
-
-    let mut window = Window::new_with_size("raiment: voxel-02", 800, 800);
+    let mut window = Window::new_with_size("raiment: voxel-main", 800, 800);
     window.set_light(Light::StickToCamera);
 
     let mut camera = kiss3d::camera::ArcBall::new_with_frustrum(
         70.0 * std::f32::consts::PI / 180.0,
         0.01,
         1000.0,
-        Point3::new(
-            REGION_SIZE as f32 * 0.4,
-            REGION_SIZE as f32 * 0.8,
-            REGION_SIZE as f32 * -0.1,
-        ),
-        Point3::new(REGION_SIZE as f32 / 2.0, 0.0, REGION_SIZE as f32 / 2.0),
+        Point3::new(64f32 * 0.4, 64f32 * 0.8, 64f32 * -0.3),
+        Point3::new(64f32 / 2.0, 0.0, 64f32 / 2.0),
     );
     camera.set_dist(45.0);
     camera.rebind_drag_button(None);
 
-    let mut texture_manager = make_texture();
-
-    let mut rng = rand::thread_rng();
-    let mut world = World::new(&mut rng);
+    let mut texture_manager = graphics::create_texture_atlas();
+    let mut world = World::new();
 
     // NPCs
     let mut wmg = WorldMapGeometry {
         chunks: HashMap::new(),
     };
 
-    //
-    // Populate the world with Actors
-    //
-    {
-        use crate::occupations::*;
-
-        world
-            .build_actor()
-            .with_name("Kestrel")
-            .with_player(true)
-            .build(&mut rng, &mut world, &|| Box::new(Avatar::new()));
-
-        for _ in 0..1 {
-            world
-                .build_actor()
-                .build(&mut rng, &mut world, &|| Box::new(Eater::new()));
-        }
-
-        if false {
-            for _ in 0..2 {
-                world
-                    .build_actor()
-                    .build(&mut rng, &mut world, &|| Box::new(RoadBuilder::new()));
-            }
-
-            for _ in 0..4 {
-                world
-                    .build_actor()
-                    .build(&mut rng, &mut world, &|| Box::new(HouseBuilder::new()));
-            }
-            for _ in 0..8 {
-                world
-                    .build_actor()
-                    .build(&mut rng, &mut world, &|| Box::new(Farmer::new()));
-            }
-            for _ in 0..0 {
-                match rng.gen_range(0, 100) {
-                    0..=9 => {
-                        world.build_actor().build(
-                            &mut rng,
-                            &mut world,
-                            &|| Box::new(Farmer::new()),
-                        );
-                    }
-                    10..=12 => {
-                        world
-                            .build_actor()
-                            .build(&mut rng, &mut world, &|| Box::new(HouseBuilder::new()));
-                    }
-                    _ => {
-                        world
-                            .build_actor()
-                            .build(&mut rng, &mut world, &|| Box::new(Mindlessness::new()));
-                    }
-                };
-            }
-            // The GrowPlants strategy...need to think about this a bit. This is intended to be an
-            // "environmental effect", but I realize there's symmetry here that this can just be
-            // an Actor.  I also like the *game* implications that the world simulation is handled
-            // by ethereal actors.
-            for _ in 0..2 {
-                world
-                    .build_actor()
-                    .with_ethereal(true)
-                    .build(&mut rng, &mut world, &|| Box::new(GrowPlants::new()));
-            }
-            for _ in 0..4 {
-                world
-                    .build_actor()
-                    .with_ethereal(true)
-                    .build(&mut rng, &mut world, &|| Box::new(CleanRoads::new()));
-            }
-        }
-    }
+    println!("Populating world...");
+    populate_world(&mut world);
 
     println!("Beginning render loop...");
     let mut last_move = std::time::Instant::now();
@@ -398,20 +350,6 @@ fn main() {
         //
         for action in action_queue.into_iter() {
             match action {
-                Action::TestFindPath => {
-                    if let Some(result) = world.world_map.find_path(
-                        (0, 0),
-                        (REGION_SIZE as i64 - 1, REGION_SIZE as i64 - 1),
-                        None,
-                    ) {
-                        for pair in result {
-                            world
-                                .world_map
-                                .set_kind(pair.0, pair.1, TileKind::_DebugTile, true);
-                        }
-                    }
-                }
-
                 Action::Move { x, y } => {
                     // Throttle Move commands, discard when there are too many
                     if timestamp.duration_since(last_move).as_millis() < 100 {
@@ -604,7 +542,7 @@ fn chunk(
     let mut points = Vec::new();
     let mut normals = Vec::new();
     let mut indices = Vec::new();
-    let mut uvs: Vec<na::Point2<f32>> = vec![];
+    let mut uvs: Vec<Point2<f32>> = vec![];
 
     let mut add_quad = |cx, cy, cz, face_id: usize, color_index| {
         let i = points.len() as u16;
